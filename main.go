@@ -38,6 +38,7 @@ func main() {
 
 func auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		//тут нужно получать/проверять токен и сохранять pointid в переменную
 		c.Next()
 		return
 	}
