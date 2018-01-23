@@ -1,15 +1,10 @@
 package http
 
 import (
-	"fba/db"
 	"fba/model"
 
 	"github.com/gin-gonic/gin"
 )
-
-type HttpManager struct {
-	Manager db.DBManager
-}
 
 func (http *HttpManager) CityPOST(c *gin.Context) {
 	var city model.City
