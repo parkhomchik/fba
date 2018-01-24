@@ -3,9 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fba/db"
-	"fba/http"
+	fbaHTTP "fba/http"
 	"fba/model"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 
 	"github.com/jinzhu/gorm"
@@ -14,7 +16,7 @@ import (
 )
 
 var dbm db.DBManager
-var httpManager http.HttpManager
+var httpManager fbaHTTP.HttpManager
 
 func main() {
 	settings, err := loadConfiguration("settings.json")
@@ -38,9 +40,41 @@ func main() {
 
 func auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
+<<<<<<< HEAD
 		//тут нужно получать/проверять токен и сохранять clientID и pointID в переменную
 		c.Next()
 		return
+=======
+		//тут нужно получать/проверять токен и сохранять pointid в переменную
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(200)
+		} else {
+			token := c.Request.Header.Get("AccessToken")
+			var clientInfo model.Client
+			client := &http.Client{}
+			req, err := http.NewRequest("GET", "http://localhost:9096/oauth2/check", nil)
+			req.Header.Add("Authorization", "Bearer "+token)
+			resp, err := client.Do(req)
+			if err != nil {
+				c.AbortWithError(400, err)
+			}
+			if resp.StatusCode == 200 {
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					c.AbortWithStatusJSON(400, model.NewError("Problem with client information"))
+				}
+				if err := json.Unmarshal(body, &clientInfo); err != nil {
+					c.AbortWithStatusJSON(400, model.NewError("Problem with client information"))
+				}
+				c.Set("ClientID", string(clientInfo.ClientID))
+				c.Next()
+			} else if resp.StatusCode == 401 {
+				c.AbortWithStatus(401)
+			} else {
+				c.AbortWithStatusJSON(400, model.NewError("Problem with authorization"))
+			}
+		}
+>>>>>>> 8d395991b1eccd33cdd4818afc3ec229bd7d71f6
 	}
 }
 
