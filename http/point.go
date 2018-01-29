@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/parkhomchik/fba/model"
@@ -67,13 +66,9 @@ func (http *HttpManager) PointDELETE(c *gin.Context) {
 }
 
 func (http *HttpManager) PointGet(c *gin.Context) {
-
 	page, err := strconv.Atoi(c.DefaultQuery("page", "0"))
 	size, err := strconv.Atoi(c.DefaultQuery("size", "10"))
-	clientID := c.MustGet("UserID").(uuid.UUID)
-
-	fmt.Println("CLIENT ID:", clientID)
-
+	clientID, _ := uuid.FromString(c.MustGet("UserID").(string))
 	points, err := http.Manager.PointGet(size, page, clientID)
 	if err != nil {
 		c.JSON(400, err)
