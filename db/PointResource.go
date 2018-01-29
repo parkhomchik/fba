@@ -1,7 +1,6 @@
-
 package db
 
-import "fba/model"
+import "github.com/parkhomchik/fba/model"
 import "fmt"
 import "github.com/satori/go.uuid"
 
@@ -25,14 +24,14 @@ func (dbm *DBManager) PointDelete(c model.Point) error {
 }
 
 //GET
-func (dbm *DBManager) PointGet(size, page int) (citys []model.Point, err error) {
-	dbm.DB.Limit(size).Order("id asc").Offset((page - 1) * size).Find(&citys)
+func (dbm *DBManager) PointGet(size, page int, clientID uuid.UUID) (points []model.Point, err error) {
+	dbm.DB.Where("staff = ?", clientID).Limit(size).Order("id asc").Offset((page - 1) * size).Find(&points)
 	return
 }
 
 //GET BY ID
-func (dbm *DBManager) PointGetById(id uuid.UUID) (city model.Point, err error) {
-	err = dbm.DB.Find(&city, id).Error
+func (dbm *DBManager) PointGetById(id uuid.UUID, clientID uuid.UUID) (point model.Point, err error) {
+	err = dbm.DB.Where("staff = ?", clientID).Find(&point, id).Error
 	return
 }
 

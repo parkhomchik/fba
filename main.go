@@ -2,58 +2,60 @@ package main
 
 import (
 	"encoding/json"
-	"fba/db"
-	fbaHTTP "fba/http"
-	"fba/model"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
+
+	fbaHTTP "github.com/parkhomchik/fba/http"
+	"github.com/parkhomchik/fba/model"
 
 	"github.com/jinzhu/gorm"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-var dbm db.DBManager
 var httpManager fbaHTTP.HttpManager
 
 func main() {
 	settings, err := loadConfiguration("settings.json")
 	db, err := getDb(settings)
-
 	check(err)
-
-	dbm.DB = db
-	httpManager.Manager = dbm
-
+	httpManager.Manager.DB = db
+	httpManager.Manager.Init()
 	r := gin.Default()
-	base := r.Group("/", auth(), DBManager())
+	base := r.Group("/", auth())
 
-	//base.POST("city", http.CityPOST)
-	//base.PUT("city/:id", http.CityPOST)
-	//base.DELETE("city/:id", http.CityPOST)
-	//base.GET("city/:size:page", http.CityPOST)
-	base.GET("city/:id", httpManager.CityPOST)
+	base.GET("city", httpManager.CityGET)
+	base.GET("city/:id", httpManager.CityGETByID)
+	base.POST("city", httpManager.CityPOST)
+	base.PUT("city", httpManager.CityPUT)
+	base.DELETE("city/:id", httpManager.CityDELETE)
 
+	base.GET("point", httpManager.PointGet)
+	base.GET("point/:id", httpManager.PointGetByID)
+	base.POST("pint", httpManager.PointPOST)
+	base.PUT("point", httpManager.PointPUT)
+	base.DELETE("point/:id", httpManager.PointDELETE)
+
+	r.Run(":" + strconv.Itoa(settings.HttpPort))
 }
 
 func auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-<<<<<<< HEAD
-		//тут нужно получать/проверять токен и сохранять clientID и pointID в переменную
-		c.Next()
-		return
-=======
+		//id, _ := uuid.FromString("59059364-3dbf-43f5-a366-ac7d5f5d903a")
+		//c.Set("UserID", id)
 		//тут нужно получать/проверять токен и сохранять pointid в переменную
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(200)
 		} else {
-			token := c.Request.Header.Get("AccessToken")
-			var clientInfo model.Client
+			token := c.Request.Header.Get("Authorization")
+			var clientInfo model.Staff
 			client := &http.Client{}
 			req, err := http.NewRequest("GET", "http://localhost:9096/oauth2/check", nil)
-			req.Header.Add("Authorization", "Bearer "+token)
+			req.Header.Add("Authorization", token)
 			resp, err := client.Do(req)
 			if err != nil {
 				c.AbortWithError(400, err)
@@ -66,7 +68,7 @@ func auth() gin.HandlerFunc {
 				if err := json.Unmarshal(body, &clientInfo); err != nil {
 					c.AbortWithStatusJSON(400, model.NewError("Problem with client information"))
 				}
-				c.Set("ClientID", string(clientInfo.ClientID))
+				c.Set("UserID", clientInfo.Id.String())
 				c.Next()
 			} else if resp.StatusCode == 401 {
 				c.AbortWithStatus(401)
@@ -74,12 +76,12 @@ func auth() gin.HandlerFunc {
 				c.AbortWithStatusJSON(400, model.NewError("Problem with authorization"))
 			}
 		}
->>>>>>> 8d395991b1eccd33cdd4818afc3ec229bd7d71f6
 	}
 }
 
 func check(err error) {
 	if err != nil {
+		fmt.Println("ERROR: ", err)
 		panic(err)
 	}
 }
@@ -96,18 +98,12 @@ func loadConfiguration(file string) (config model.Settings, err error) {
 	return
 }
 
-func getDb(settings model.Settings) (gorm.DB, error) {
+func getDb(settings model.Settings) (*gorm.DB, error) {
 	connectionString := fmt.Sprintf("host=%v port=%v user=%v dbname=%v sslmode=disable password=%v", settings.Host, settings.Port, settings.User, settings.DBName, settings.Password)
 	db, err := gorm.Open("postgres", connectionString)
-	db.LogMode(false)
+	db.LogMode(true)
 	db.SingularTable(true)
 	db.DB().SetMaxOpenConns(80)
 	db.DB().SetMaxIdleConns(9)
-	return *db, err
-}
-
-func DBManager() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Set("dataBase", dbm)
-	}
+	return db, err
 }

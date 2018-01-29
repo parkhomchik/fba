@@ -1,17 +1,16 @@
-
 package db
 
-import "fba/model"
+import "github.com/parkhomchik/fba/model"
 import "fmt"
 import "github.com/satori/go.uuid"
 
 //CREATE
-func (dbm *DBManager) CityCreate(c model.City) (err error) {
+func (dbm *DBManager) CityCreate(c model.City) (city model.City, err error) {
 	if dbm.DB.NewRecord(&c) {
 		err = dbm.DB.Create(&c).Error
-		return err
+		return c, err
 	}
-	return fmt.Errorf("%s", "запись уже существует")
+	return c, fmt.Errorf("%s", "запись уже существует")
 }
 
 //UPDATE
@@ -32,7 +31,7 @@ func (dbm *DBManager) CityGet(size, page int) (citys []model.City, err error) {
 
 //GET BY ID
 func (dbm *DBManager) CityGetById(id uuid.UUID) (city model.City, err error) {
-	err = dbm.DB.Find(&city, id).Error
+	err = dbm.DB.Where("id = ?", id).First(&city).Error
 	return
 }
 

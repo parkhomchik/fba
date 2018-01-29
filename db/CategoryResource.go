@@ -1,7 +1,6 @@
-
 package db
 
-import "fba/model"
+import "github.com/parkhomchik/fba/model"
 import "fmt"
 import "github.com/satori/go.uuid"
 
