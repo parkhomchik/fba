@@ -52,7 +52,7 @@ func auth() gin.HandlerFunc {
 			c.AbortWithStatus(200)
 		} else {
 			token := c.Request.Header.Get("Authorization")
-			var clientInfo model.Staff
+			var tokenInfo model.TokenInfo
 			client := &http.Client{}
 			req, err := http.NewRequest("GET", "http://localhost:9096/oauth2/check", nil)
 			req.Header.Add("Authorization", token)
@@ -63,12 +63,12 @@ func auth() gin.HandlerFunc {
 			if resp.StatusCode == 200 {
 				body, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
-					c.AbortWithStatusJSON(400, model.NewError("Problem with client information"))
+					c.AbortWithStatusJSON(400, model.NewError("Problem with client information (body)"))
 				}
-				if err := json.Unmarshal(body, &clientInfo); err != nil {
-					c.AbortWithStatusJSON(400, model.NewError("Problem with client information"))
+				if err := json.Unmarshal(body, &tokenInfo); err != nil {
+					c.AbortWithStatusJSON(400, model.NewError("Problem with client information (parsing)"))
 				}
-				c.Set("UserID", clientInfo.UserID.String())
+				c.Set("TokenInfo", tokenInfo)
 				c.Next()
 			} else if resp.StatusCode == 401 {
 				c.AbortWithStatus(401)

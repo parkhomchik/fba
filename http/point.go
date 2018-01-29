@@ -68,7 +68,9 @@ func (http *HttpManager) PointDELETE(c *gin.Context) {
 func (http *HttpManager) PointGet(c *gin.Context) {
 	page, err := strconv.Atoi(c.DefaultQuery("page", "0"))
 	size, err := strconv.Atoi(c.DefaultQuery("size", "10"))
-	clientID, _ := uuid.FromString(c.MustGet("UserID").(string))
+	var tokenInfo model.TokenInfo
+	tokenInfo = c.MustGet("TokenInfo").(model.TokenInfo)
+	clientID, _ := tokenInfo.GetUserID()
 	points, err := http.Manager.PointGet(size, page, clientID)
 	if err != nil {
 		c.JSON(400, err)
