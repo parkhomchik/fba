@@ -68,6 +68,7 @@ func auth() gin.HandlerFunc {
 				if err := json.Unmarshal(body, &tokenInfo); err != nil {
 					c.AbortWithStatusJSON(400, model.NewError("Problem with client information (parsing)"))
 				}
+				fmt.Println("TOKENINFO", tokenInfo)
 				c.Set("TokenInfo", tokenInfo)
 				c.Next()
 			} else if resp.StatusCode == 401 {

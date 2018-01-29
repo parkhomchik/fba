@@ -70,8 +70,10 @@ func (http *HttpManager) PointGet(c *gin.Context) {
 	size, err := strconv.Atoi(c.DefaultQuery("size", "10"))
 	var tokenInfo model.TokenInfo
 	tokenInfo = c.MustGet("TokenInfo").(model.TokenInfo)
-	clientID, _ := tokenInfo.GetUserID()
-	points, err := http.Manager.PointGet(size, page, clientID)
+	UserID, _ := tokenInfo.GetUserID()
+	ClientID, _ := tokenInfo.GetClientID()
+
+	points, err := http.Manager.PointGet(size, page, ClientID, UserID)
 	if err != nil {
 		c.JSON(400, err)
 	}
