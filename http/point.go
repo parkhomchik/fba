@@ -20,8 +20,8 @@ func (http *HttpManager) PointPOST(c *gin.Context) {
 		c.JSON(400, "problem decoding body")
 		return
 	}
-
-	if err := http.Manager.PointCreate(point); err != nil {
+	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
+	if err := http.Manager.PointCreate(point, tokenInfo); err != nil {
 		c.JSON(500, err)
 		return
 	}
@@ -50,8 +50,10 @@ func (http *HttpManager) PointDELETE(c *gin.Context) {
 		c.JSON(400, err)
 		return
 	}
-	clientID := c.MustGet("clientID").(uuid.UUID)
-	point, err := http.Manager.PointGetById(id, clientID)
+	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
+	UserID, _ := tokenInfo.GetUserID()
+	ClientID, _ := tokenInfo.GetClientID()
+	point, err := http.Manager.PointGetById(id, ClientID, UserID)
 	if err != nil {
 		c.JSON(500, err)
 		return
@@ -68,8 +70,8 @@ func (http *HttpManager) PointDELETE(c *gin.Context) {
 func (http *HttpManager) PointGet(c *gin.Context) {
 	page, err := strconv.Atoi(c.DefaultQuery("page", "0"))
 	size, err := strconv.Atoi(c.DefaultQuery("size", "10"))
-	var tokenInfo model.TokenInfo
-	tokenInfo = c.MustGet("TokenInfo").(model.TokenInfo)
+	//var tokenInfo model.TokenInfo
+	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
 	UserID, _ := tokenInfo.GetUserID()
 	ClientID, _ := tokenInfo.GetClientID()
 
@@ -87,8 +89,12 @@ func (http *HttpManager) PointGetByID(c *gin.Context) {
 		c.JSON(400, err)
 		return
 	}
-	clientID := c.MustGet("UserID").(uuid.UUID)
-	points, err := http.Manager.PointGetById(id, clientID)
+	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
+	UserID, _ := tokenInfo.GetUserID()
+	ClientID, _ := tokenInfo.GetClientID()
+
+	points, err := http.Manager.PointGetById(id, ClientID, UserID)
+
 	if err != nil {
 		c.JSON(400, err)
 	}

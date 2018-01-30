@@ -28,6 +28,8 @@ func main() {
 	r := gin.Default()
 	base := r.Group("/", auth())
 
+	base.OPTIONS("", func(c *gin.Context) { c.Next() })
+
 	base.GET("city", httpManager.CityGET)
 	base.GET("city/:id", httpManager.CityGETByID)
 	base.POST("city", httpManager.CityPOST)
