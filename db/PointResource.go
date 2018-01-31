@@ -55,7 +55,7 @@ func (dbm *DBManager) PointCount(size, page int, clientID, userID uuid.UUID) (co
 	if userID.String() != "00000000-0000-0000-0000-000000000000" {
 		err = dbm.DB.Model(&model.Point{}).Where("staff = ?", userID).Count(&count).Error
 	} else {
-		dbm.DB.Model(&model.Point{}).Where("client_id = ?", clientID).Limit(size).Order("id asc").Offset((page - 1) * size).Count(&count)
+		return 0, fmt.Errorf("%s", "No USER")
 	}
 	return
 }

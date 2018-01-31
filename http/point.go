@@ -30,15 +30,7 @@ type Client struct {
 	Secret    string
 	Domain    string
 	UserID    uuid.UUID
-	Scope     []Scope
-}
-
-type Scope struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time
-	Name      string
+	//	Scope     []Scope
 }
 
 func (http *HttpManager) PointPOST(c *gin.Context) {
@@ -54,7 +46,7 @@ func (http *HttpManager) PointPOST(c *gin.Context) {
 	}
 
 	req, err := h.NewRequest("POST", "http://localhost:9096/connect/registrationclient", nil)
-	req.Header.Add("AccessToken", c.Request.Header.Get("Authorization"))
+	req.Header.Add("Authorization", c.Request.Header.Get("Authorization"))
 	cl := h.Client{}
 	resp, err := cl.Do(req)
 

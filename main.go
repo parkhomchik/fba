@@ -29,7 +29,7 @@ func main() {
 	r.Use(setCORSMiddleware())
 	base := r.Group("/", auth())
 
-	base.OPTIONS("", func(c *gin.Context) { c.Next() })
+	//base.OPTIONS("", func(c *gin.Context) { c.Next() })
 
 	base.GET("city", httpManager.CityGET)
 	base.GET("city/:id", httpManager.CityGETByID)
@@ -118,6 +118,10 @@ func setCORSMiddleware() gin.HandlerFunc {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "authorization, content-type")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE")
-		c.Next()
+		if c.Request.Method != "OPTIONS" {
+			c.Next()
+		} else {
+			c.AbortWithStatus(http.StatusOK)
+		}
 	}
 }
