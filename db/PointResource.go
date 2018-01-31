@@ -5,7 +5,7 @@ import "fmt"
 import "github.com/satori/go.uuid"
 
 //CREATE
-func (dbm *DBManager) PointCreate(c model.Point, ti model.TokenInfo) (err error) {
+func (dbm *DBManager) PointCreate(c model.Point, ti model.TokenInfo) (newPoint model.Point, err error) {
 	/*
 		-	если пользователя нет то пнх
 		-	создаем запись в поинтах
@@ -14,9 +14,9 @@ func (dbm *DBManager) PointCreate(c model.Point, ti model.TokenInfo) (err error)
 	*/
 	if dbm.DB.NewRecord(&c) {
 		err = dbm.DB.Create(&c).Error
-		return err
+		return c, err
 	}
-	return fmt.Errorf("%s", "запись уже существует")
+	return c, fmt.Errorf("%s", "запись уже существует")
 }
 
 //UPDATE

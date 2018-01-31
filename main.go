@@ -49,9 +49,6 @@ func main() {
 
 func auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		//id, _ := uuid.FromString("59059364-3dbf-43f5-a366-ac7d5f5d903a")
-		//c.Set("UserID", id)
-		//тут нужно получать/проверять токен и сохранять pointid в переменную
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(200)
 		} else {

@@ -16,12 +16,6 @@ import (
 	"encoding/json"
 )
 
-/*
-type Paginator struct {
-	Page int
-	Size int
-}*/
-
 type Client struct {
 	ID        uuid.UUID
 	CreatedAt time.Time
@@ -30,7 +24,6 @@ type Client struct {
 	Secret    string
 	Domain    string
 	UserID    uuid.UUID
-	//	Scope     []Scope
 }
 
 func (http *HttpManager) PointPOST(c *gin.Context) {
@@ -40,7 +33,8 @@ func (http *HttpManager) PointPOST(c *gin.Context) {
 		return
 	}
 	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
-	if err := http.Manager.PointCreate(point, tokenInfo); err != nil {
+	p, err := http.Manager.PointCreate(point, tokenInfo)
+	if err != nil {
 		c.JSON(500, err)
 		return
 	}
@@ -62,24 +56,14 @@ func (http *HttpManager) PointPOST(c *gin.Context) {
 	err = json.Unmarshal(bodyBytes, &client)
 
 	fmt.Println(client)
+	p.ClientID = &client.ID
 
-	//http://localhost:9096/connect/registrationclient
-	//AccessToken
-	/*
-			{
-		    "ID": "746d3429-3213-418f-ab0b-3beb4cdb25fa",
-		    "CreatedAt": "2018-01-30T11:09:48.140732+06:00",
-		    "UpdatedAt": "2018-01-30T11:09:48.145059+06:00",
-		    "DeletedAt": null,
-		    "Secret": "E4/hzz9gOZPcb5LpXgImGjXpKOyJOUOa4tDOhrj0D/wt1TQVY7+THlA6zbfFl7why+uZy+imUNYbhknwv1buDg==",
-		    "Domain": "",
-		    "UserID": "d6aac3cb-ea3e-4d96-90e2-babc2fe1b120",
-		    "Scope": null
-		}
+	if err = http.Manager.PointUpdate(p); err != nil {
+		c.JSON(500, err)
+		return
+	}
 
-	*/
-
-	c.JSON(200, point)
+	c.JSON(200, p)
 }
 
 func (http *HttpManager) PointPUT(c *gin.Context) {
