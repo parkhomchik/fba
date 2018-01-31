@@ -1,17 +1,44 @@
 package http
 
 import (
+	"fmt"
+	"io/ioutil"
 	"strconv"
+	"time"
 
 	"github.com/parkhomchik/fba/model"
 
+	h "net/http"
+
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
+
+	"encoding/json"
 )
 
+/*
 type Paginator struct {
 	Page int
 	Size int
+}*/
+
+type Client struct {
+	ID        uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time
+	Secret    string
+	Domain    string
+	UserID    uuid.UUID
+	Scope     []Scope
+}
+
+type Scope struct {
+	ID        uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time
+	Name      string
 }
 
 func (http *HttpManager) PointPOST(c *gin.Context) {
@@ -25,6 +52,40 @@ func (http *HttpManager) PointPOST(c *gin.Context) {
 		c.JSON(500, err)
 		return
 	}
+
+	req, err := h.NewRequest("POST", "http://localhost:9096/connect/registrationclient", nil)
+	req.Header.Add("AccessToken", c.Request.Header.Get("Authorization"))
+	cl := h.Client{}
+	resp, err := cl.Do(req)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("http://localhost:9096/connect/registrationclient status =", resp.Status)
+
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	client := Client{}
+	err = json.Unmarshal(bodyBytes, &client)
+
+	fmt.Println(client)
+
+	//http://localhost:9096/connect/registrationclient
+	//AccessToken
+	/*
+			{
+		    "ID": "746d3429-3213-418f-ab0b-3beb4cdb25fa",
+		    "CreatedAt": "2018-01-30T11:09:48.140732+06:00",
+		    "UpdatedAt": "2018-01-30T11:09:48.145059+06:00",
+		    "DeletedAt": null,
+		    "Secret": "E4/hzz9gOZPcb5LpXgImGjXpKOyJOUOa4tDOhrj0D/wt1TQVY7+THlA6zbfFl7why+uZy+imUNYbhknwv1buDg==",
+		    "Domain": "",
+		    "UserID": "d6aac3cb-ea3e-4d96-90e2-babc2fe1b120",
+		    "Scope": null
+		}
+
+	*/
 
 	c.JSON(200, point)
 }
