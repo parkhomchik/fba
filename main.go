@@ -26,6 +26,7 @@ func main() {
 	httpManager.Manager.DB = db
 	httpManager.Manager.Init()
 	r := gin.Default()
+	r.Use(setCORSMiddleware())
 	base := r.Group("/", auth())
 
 	base.OPTIONS("", func(c *gin.Context) { c.Next() })
@@ -109,4 +110,13 @@ func getDb(settings model.Settings) (*gorm.DB, error) {
 	db.DB().SetMaxOpenConns(80)
 	db.DB().SetMaxIdleConns(9)
 	return db, err
+}
+
+func setCORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "authorization, content-type")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE")
+		c.Next()
+	}
 }
