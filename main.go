@@ -42,6 +42,7 @@ func main() {
 	base.POST("pint", httpManager.PointPOST)
 	base.PUT("point", httpManager.PointPUT)
 	base.DELETE("point/:id", httpManager.PointDELETE)
+	base.GET("point/count", httpManager.PointCount)
 
 	r.Run(":" + strconv.Itoa(settings.HttpPort))
 }

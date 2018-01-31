@@ -101,3 +101,19 @@ func (http *HttpManager) PointGetByID(c *gin.Context) {
 
 	c.JSON(200, points)
 }
+
+func (http *HttpManager) PointCount(c *gin.Context) {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "0"))
+	size, err := strconv.Atoi(c.DefaultQuery("size", "10"))
+	//var tokenInfo model.TokenInfo
+	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
+	UserID, _ := tokenInfo.GetUserID()
+	ClientID, _ := tokenInfo.GetClientID()
+
+	count, err := http.Manager.PointCount(size, page, ClientID, UserID)
+	if err != nil {
+		c.JSON(400, err)
+	}
+
+	c.JSON(200, count)
+}
