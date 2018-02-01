@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -124,6 +125,7 @@ func (http *HttpManager) PointDELETE(c *gin.Context) {
 	}
 	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
 	point, err := http.Manager.PointGetById(id, tokenInfo)
+	fmt.Println("DELETE point", point)
 	if err != nil {
 		c.JSON(500, err)
 		return

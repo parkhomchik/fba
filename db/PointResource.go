@@ -24,8 +24,8 @@ func (dbm *DBManager) PointUpdate(c model.Point) error {
 }
 
 //DELETE
-func (dbm *DBManager) PointDelete(c model.Point) error {
-	return dbm.DB.Delete(&c).Error
+func (dbm *DBManager) PointDelete(point model.Point) error {
+	return dbm.DB.Delete(&point).Error
 }
 
 //GET
@@ -47,17 +47,13 @@ func (dbm *DBManager) PointGet(size, page int, ti model.TokenInfo) (points []mod
 
 //GET BY ID
 func (dbm *DBManager) PointGetById(id uuid.UUID, ti model.TokenInfo) (point model.Point, err error) {
-	uid, err := ti.GetUserID()
-	cid, err := ti.GetClientID()
-
 	if err != nil {
 		return
 	}
-	if !ti.UserIsNull() {
-		err = dbm.DB.Where("staff = ?", uid).Find(&point, id).Error
-	} else {
-		err = dbm.DB.Where("client_id = ? AND id = ?", cid, id).First(&point).Error
+	if err = dbm.DB.Where("id = ?", id).First(&point).Error; err != nil {
+		return
 	}
+
 	return
 }
 
