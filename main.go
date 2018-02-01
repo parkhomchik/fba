@@ -37,7 +37,8 @@ func main() {
 
 	//================================================================================
 	base.GET("/point/:id", httpManager.PointGetByID)
-	base.GET("/point/:id/authorize", httpManager.PointClientInfo)
+	base.GET("/point/:id/authorize", httpManager.PointGetOauthClient)
+	//base.POST("/point/:id/authorize", httpManager.PointCreateOauthClient)
 	base.GET("/points", httpManager.PointGet)
 	base.GET("/points/count", httpManager.PointCount)
 	base.POST("/point", httpManager.PointPOST)

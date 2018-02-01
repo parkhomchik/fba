@@ -59,10 +59,16 @@ func (http *HttpManager) PointPOST(c *gin.Context) {
 	c.JSON(200, p)
 }
 
-func (http *HttpManager) PointClientInfo(c *gin.Context) {
-	clientid := c.Param("pointid")
-	fmt.Println(clientid)
-	body, status, err := http.Send("GET", "http://localhost:9096/connect/clientinfo/"+clientid, c.Request.Header.Get("Authorization"))
+//PointGetOauthClient получаем информацию по клиенту из OAuth
+func (http *HttpManager) PointGetOauthClient(c *gin.Context) {
+	pid, err := uuid.FromString(c.Param("id"))
+	if err != nil {
+		c.JSON(400, err)
+		return
+	}
+	ti := c.MustGet("TokenInfo").(model.TokenInfo)
+	point, err := http.Manager.PointGetById(pid, ti)
+	body, status, err := http.Send("GET", "http://localhost:9096/connect/clientinfo/"+point.ClientID.String(), c.Request.Header.Get("Authorization"))
 	fmt.Println(status, body)
 	client := Client{}
 	err = json.Unmarshal(body, &client)
