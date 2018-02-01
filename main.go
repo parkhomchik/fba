@@ -37,12 +37,15 @@ func main() {
 	base.PUT("city", httpManager.CityPUT)
 	base.DELETE("city/:id", httpManager.CityDELETE)
 
-	base.GET("point", httpManager.PointGet)
-	base.GET("point/:id", httpManager.PointGetByID)
-	base.POST("point", httpManager.PointPOST)
-	base.PUT("point", httpManager.PointPUT)
-	base.DELETE("point/:id", httpManager.PointDELETE)
-	//base.GET("point/count", httpManager.PointCount)
+	point := r.Group("/point", auth())
+
+	point.GET("clientinfo/:clientid", httpManager.PointClientInfo)
+	point.GET("count/", httpManager.PointCount)
+	point.GET("blyat", httpManager.PointGet)
+	point.GET("blyat/:id", httpManager.PointGetByID)
+	point.POST("", httpManager.PointPOST)
+	point.PUT("", httpManager.PointPUT)
+	point.DELETE(":id", httpManager.PointDELETE)
 
 	r.Run(":" + strconv.Itoa(settings.HttpPort))
 }
@@ -69,7 +72,9 @@ func auth() gin.HandlerFunc {
 				if err := json.Unmarshal(body, &tokenInfo); err != nil {
 					c.AbortWithStatusJSON(400, model.NewError("Problem with client information (parsing)"))
 				}
-				fmt.Println("TOKENINFO", tokenInfo)
+
+				tokenInfo.Token = token
+
 				c.Set("TokenInfo", tokenInfo)
 				c.Next()
 			} else if resp.StatusCode == 401 {

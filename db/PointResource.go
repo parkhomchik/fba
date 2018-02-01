@@ -6,12 +6,11 @@ import "github.com/satori/go.uuid"
 
 //CREATE
 func (dbm *DBManager) PointCreate(c model.Point, ti model.TokenInfo) (newPoint model.Point, err error) {
-	/*
-		-	если пользователя нет то пнх
-		-	создаем запись в поинтах
-		- 	отправляем инфу в oauth
-		-	проставляем связь с клиентом из oauth
-	*/
+	if ti.UserIsNull() {
+		return
+	}
+
+	c.Staff, _ = ti.GetUserID()
 	if dbm.DB.NewRecord(&c) {
 		err = dbm.DB.Create(&c).Error
 		return c, err
@@ -30,30 +29,46 @@ func (dbm *DBManager) PointDelete(c model.Point) error {
 }
 
 //GET
-func (dbm *DBManager) PointGet(size, page int, clientID, userID uuid.UUID) (points []model.Point, err error) {
-	if userID.String() != "00000000-0000-0000-0000-000000000000" {
-		dbm.DB.Where("staff = ?", userID).Limit(size).Order("id asc").Offset((page - 1) * size).Find(&points)
+func (dbm *DBManager) PointGet(size, page int, ti model.TokenInfo) (points []model.Point, err error) {
+	uid, err := ti.GetUserID()
+	cid, err := ti.GetClientID()
+
+	if err != nil {
+		return
+	}
+
+	if !ti.UserIsNull() {
+		dbm.DB.Where("staff = ?", uid).Limit(size).Order("id asc").Offset((page - 1) * size).Find(&points)
 	} else {
-		dbm.DB.Where("client_id = ?", clientID).Limit(size).Order("id asc").Offset((page - 1) * size).Find(&points)
+		dbm.DB.Where("client_id = ?", cid).Limit(size).Order("id asc").Offset((page - 1) * size).Find(&points)
 	}
 	return
 }
 
 //GET BY ID
-func (dbm *DBManager) PointGetById(id uuid.UUID, clientID, userID uuid.UUID) (point model.Point, err error) {
-	if userID.String() != "00000000-0000-0000-0000-000000000000" {
-		err = dbm.DB.Where("staff = ?", userID).Find(&point, id).Error
+func (dbm *DBManager) PointGetById(id uuid.UUID, ti model.TokenInfo) (point model.Point, err error) {
+	uid, err := ti.GetUserID()
+	cid, err := ti.GetClientID()
+
+	if err != nil {
+		return
+	}
+	if !ti.UserIsNull() {
+		err = dbm.DB.Where("staff = ?", uid).Find(&point, id).Error
 	} else {
-		err = dbm.DB.Where("client_id = ? AND id = ?", clientID, id).First(&point).Error
+		err = dbm.DB.Where("client_id = ? AND id = ?", cid, id).First(&point).Error
 	}
 	return
 }
 
 //GET Count
-func (dbm *DBManager) PointCount(size, page int, clientID, userID uuid.UUID) (count int, err error) {
-
-	if userID.String() != "00000000-0000-0000-0000-000000000000" {
-		err = dbm.DB.Model(&model.Point{}).Where("staff = ?", userID).Count(&count).Error
+func (dbm *DBManager) PointCount(size, page int, ti model.TokenInfo) (count int, err error) {
+	uid, err := ti.GetUserID()
+	if err != nil {
+		return
+	}
+	if !ti.UserIsNull() {
+		err = dbm.DB.Model(&model.Point{}).Where("staff = ?", uid).Count(&count).Error
 	} else {
 		return 0, fmt.Errorf("%s", "No USER")
 	}

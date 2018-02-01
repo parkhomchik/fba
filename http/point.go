@@ -2,13 +2,10 @@ package http
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strconv"
 	"time"
 
 	"github.com/parkhomchik/fba/model"
-
-	h "net/http"
 
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
@@ -16,6 +13,7 @@ import (
 	"encoding/json"
 )
 
+//Client oauth2 client
 type Client struct {
 	ID        uuid.UUID
 	CreatedAt time.Time
@@ -26,6 +24,7 @@ type Client struct {
 	UserID    uuid.UUID
 }
 
+//PointPOST Create point
 func (http *HttpManager) PointPOST(c *gin.Context) {
 	var point model.Point
 	if c.Bind(&point) != nil {
@@ -39,48 +38,56 @@ func (http *HttpManager) PointPOST(c *gin.Context) {
 		return
 	}
 
-	req, err := h.NewRequest("POST", "http://localhost:9096/connect/registrationclient", nil)
-	req.Header.Add("Authorization", c.Request.Header.Get("Authorization"))
-	cl := h.Client{}
-	resp, err := cl.Do(req)
-
+	body, status, err := http.Send("POST", "http://localhost:9096/connect/registrationclient", c.Request.Header.Get("Authorization"))
 	if err != nil {
-		fmt.Println(err)
+		c.JSON(500, err)
+		return
 	}
-
-	fmt.Println("http://localhost:9096/connect/registrationclient status =", resp.Status)
-
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
-
+	if status != 200 {
+		http.Manager.PointDelete(point)
+		c.JSON(500, "no ouath")
+		return
+	}
 	client := Client{}
-	err = json.Unmarshal(bodyBytes, &client)
-
-	fmt.Println(client)
+	err = json.Unmarshal(body, &client)
 	p.ClientID = &client.ID
 
 	if err = http.Manager.PointUpdate(p); err != nil {
 		c.JSON(500, err)
 		return
 	}
-
 	c.JSON(200, p)
 }
 
+func (http *HttpManager) PointClientInfo(c *gin.Context) {
+	clientid := c.Param("clientid")
+	fmt.Println(clientid)
+	body, status, err := http.Send("GET", "http://localhost:9096/connect/clientinfo/"+clientid, c.Request.Header.Get("Authorization"))
+	fmt.Println(status, body)
+	client := Client{}
+	err = json.Unmarshal(body, &client)
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+	c.JSON(200, client)
+}
+
+//PointPUT update point
 func (http *HttpManager) PointPUT(c *gin.Context) {
 	var point model.Point
 	if c.Bind(&point) != nil {
 		c.JSON(400, "problem decoding body")
 		return
 	}
-
 	if err := http.Manager.PointUpdate(point); err != nil {
 		c.JSON(500, err)
 		return
 	}
-
 	c.JSON(200, point)
 }
 
+//PointDELETE delete point
 func (http *HttpManager) PointDELETE(c *gin.Context) {
 	id, err := uuid.FromString(c.Param("id"))
 	if err != nil {
@@ -88,38 +95,31 @@ func (http *HttpManager) PointDELETE(c *gin.Context) {
 		return
 	}
 	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
-	UserID, _ := tokenInfo.GetUserID()
-	ClientID, _ := tokenInfo.GetClientID()
-	point, err := http.Manager.PointGetById(id, ClientID, UserID)
+	point, err := http.Manager.PointGetById(id, tokenInfo)
 	if err != nil {
 		c.JSON(500, err)
 		return
 	}
-
 	if err := http.Manager.PointDelete(point); err != nil {
 		c.JSON(500, err)
 		return
 	}
-
 	c.JSON(200, "")
 }
 
+//PointGet get list point, parameters page(1) and size(10)
 func (http *HttpManager) PointGet(c *gin.Context) {
 	page, err := strconv.Atoi(c.DefaultQuery("page", "0"))
 	size, err := strconv.Atoi(c.DefaultQuery("size", "10"))
-	//var tokenInfo model.TokenInfo
 	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
-	UserID, _ := tokenInfo.GetUserID()
-	ClientID, _ := tokenInfo.GetClientID()
-
-	points, err := http.Manager.PointGet(size, page, ClientID, UserID)
+	points, err := http.Manager.PointGet(size, page, tokenInfo)
 	if err != nil {
 		c.JSON(400, err)
 	}
-
 	c.JSON(200, points)
 }
 
+//PointGetByID get point by id
 func (http *HttpManager) PointGetByID(c *gin.Context) {
 	id, err := uuid.FromString(c.Param("id"))
 	if err != nil {
@@ -127,30 +127,21 @@ func (http *HttpManager) PointGetByID(c *gin.Context) {
 		return
 	}
 	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
-	UserID, _ := tokenInfo.GetUserID()
-	ClientID, _ := tokenInfo.GetClientID()
-
-	points, err := http.Manager.PointGetById(id, ClientID, UserID)
-
+	points, err := http.Manager.PointGetById(id, tokenInfo)
 	if err != nil {
 		c.JSON(400, err)
 	}
-
 	c.JSON(200, points)
 }
 
+//PointCount get count points
 func (http *HttpManager) PointCount(c *gin.Context) {
 	page, err := strconv.Atoi(c.DefaultQuery("page", "0"))
 	size, err := strconv.Atoi(c.DefaultQuery("size", "10"))
-	//var tokenInfo model.TokenInfo
 	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
-	UserID, _ := tokenInfo.GetUserID()
-	ClientID, _ := tokenInfo.GetClientID()
-
-	count, err := http.Manager.PointCount(size, page, ClientID, UserID)
+	count, err := http.Manager.PointCount(size, page, tokenInfo)
 	if err != nil {
 		c.JSON(400, err)
 	}
-
 	c.JSON(200, count)
 }
