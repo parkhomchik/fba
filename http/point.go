@@ -60,7 +60,7 @@ func (http *HttpManager) PointPOST(c *gin.Context) {
 }
 
 func (http *HttpManager) PointClientInfo(c *gin.Context) {
-	clientid := c.Param("clientid")
+	clientid := c.Param("pointid")
 	fmt.Println(clientid)
 	body, status, err := http.Send("GET", "http://localhost:9096/connect/clientinfo/"+clientid, c.Request.Header.Get("Authorization"))
 	fmt.Println(status, body)

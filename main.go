@@ -29,23 +29,20 @@ func main() {
 	r.Use(setCORSMiddleware())
 	base := r.Group("/", auth())
 
-	//base.OPTIONS("", func(c *gin.Context) { c.Next() })
-
 	base.GET("city", httpManager.CityGET)
 	base.GET("city/:id", httpManager.CityGETByID)
 	base.POST("city", httpManager.CityPOST)
 	base.PUT("city", httpManager.CityPUT)
 	base.DELETE("city/:id", httpManager.CityDELETE)
 
-	point := r.Group("/point", auth())
-
-	point.GET("clientinfo/:clientid", httpManager.PointClientInfo)
-	point.GET("count/", httpManager.PointCount)
-	point.GET("blyat", httpManager.PointGet)
-	point.GET("blyat/:id", httpManager.PointGetByID)
-	point.POST("", httpManager.PointPOST)
-	point.PUT("", httpManager.PointPUT)
-	point.DELETE(":id", httpManager.PointDELETE)
+	//================================================================================
+	base.GET("/point/:id", httpManager.PointGetByID)
+	base.GET("/point/:id/authorize", httpManager.PointClientInfo)
+	base.GET("/points", httpManager.PointGet)
+	base.GET("/points/count", httpManager.PointCount)
+	base.POST("/point", httpManager.PointPOST)
+	base.PUT("/point", httpManager.PointPUT)
+	base.DELETE("/point/:id", httpManager.PointDELETE)
 
 	r.Run(":" + strconv.Itoa(settings.HttpPort))
 }
