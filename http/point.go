@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"strconv"
 	"time"
 
@@ -24,39 +23,41 @@ type Client struct {
 	UserID    uuid.UUID
 }
 
-//PointPOST Create point
+//PointPOST создать точку
 func (http *HttpManager) PointPOST(c *gin.Context) {
 	var point model.Point
 	if c.Bind(&point) != nil {
 		c.JSON(400, "problem decoding body")
 		return
 	}
-	tokenInfo := c.MustGet("TokenInfo").(model.TokenInfo)
-	p, err := http.Manager.PointCreate(point, tokenInfo)
+	ti := c.MustGet("TokenInfo").(model.TokenInfo)
+	p, err := http.Manager.PointCreate(point, ti)
 	if err != nil {
 		c.JSON(500, err)
 		return
 	}
 
-	body, status, err := http.Send("POST", "http://localhost:9096/connect/registrationclient", c.Request.Header.Get("Authorization"))
-	if err != nil {
-		c.JSON(500, err)
-		return
-	}
-	if status != 200 {
-		http.Manager.PointDelete(point)
-		c.JSON(500, "no ouath")
-		return
-	}
-	client := Client{}
-	err = json.Unmarshal(body, &client)
-	p.ClientID = &client.ID
-
-	if err = http.Manager.PointUpdate(p); err != nil {
-		c.JSON(500, err)
-		return
-	}
+	http.PointCreateOauthClient(p.Id, ti)
 	c.JSON(200, p)
+}
+
+//PointCreateOauthClient добавить авторизацию для точки
+func (http *HttpManager) PointCreateOauthClient(pid uuid.UUID, ti model.TokenInfo) (client Client, err error) {
+	point, err := http.Manager.PointGetById(pid, ti)
+
+	body, status, err := http.Send("POST", "http://localhost:9096/connect/registrationclient", ti.Token)
+	if err != nil {
+		return
+	}
+	if status == 200 {
+		err = json.Unmarshal(body, &client)
+		point.ClientID = &client.ID
+
+		if err = http.Manager.PointUpdate(point); err != nil {
+			return
+		}
+	}
+	return
 }
 
 //PointGetOauthClient получаем информацию по клиенту из OAuth
@@ -68,9 +69,15 @@ func (http *HttpManager) PointGetOauthClient(c *gin.Context) {
 	}
 	ti := c.MustGet("TokenInfo").(model.TokenInfo)
 	point, err := http.Manager.PointGetById(pid, ti)
-	body, status, err := http.Send("GET", "http://localhost:9096/connect/clientinfo/"+point.ClientID.String(), c.Request.Header.Get("Authorization"))
-	fmt.Println(status, body)
 	client := Client{}
+
+	if point.ClientID == nil {
+		client, err = http.PointCreateOauthClient(pid, ti)
+		c.JSON(200, client)
+		return
+	}
+
+	body, _, err := http.Send("GET", "http://localhost:9096/connect/clientinfo/"+point.ClientID.String(), c.Request.Header.Get("Authorization"))
 	err = json.Unmarshal(body, &client)
 	if err != nil {
 		c.JSON(500, err)
@@ -86,6 +93,21 @@ func (http *HttpManager) PointPUT(c *gin.Context) {
 		c.JSON(400, "problem decoding body")
 		return
 	}
+
+	ti := c.MustGet("TokenInfo").(model.TokenInfo)
+	p, err := http.Manager.PointGetById(point.Id, ti)
+	uid, err := ti.GetUserID()
+
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+
+	if p.Staff != uid {
+		c.JSON(404, "Staff не совпадает")
+		return
+	}
+
 	if err := http.Manager.PointUpdate(point); err != nil {
 		c.JSON(500, err)
 		return
@@ -106,6 +128,19 @@ func (http *HttpManager) PointDELETE(c *gin.Context) {
 		c.JSON(500, err)
 		return
 	}
+	ti := c.MustGet("TokenInfo").(model.TokenInfo)
+	uid, err := ti.GetUserID()
+
+	if err != nil {
+		c.JSON(500, err)
+		return
+	}
+
+	if point.Staff != uid {
+		c.JSON(500, "Staff не совпадает")
+		return
+	}
+
 	if err := http.Manager.PointDelete(point); err != nil {
 		c.JSON(500, err)
 		return
